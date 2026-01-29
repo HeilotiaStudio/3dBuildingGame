@@ -1,0 +1,57 @@
+<span class="keyword">using</span> UnityEngine;
+<span class="keyword">using</span> System.Collections.Generic;
+
+<span class="comment">// Singleton manager for the building system</span>
+<span class="keyword">public class</span> <span class="class">BuildingManager</span> : <span class="class">MonoBehaviour</span>
+{
+    <span class="keyword">public static</span> <span class="class">BuildingManager</span> Instance { <span class="keyword">get</span>; <span class="keyword">private set</span>; }
+    
+    <span class="keyword">public</span> <span class="class">BuildingPiece</span>[] availablePieces;
+    <span class="keyword">private</span> <span class="class">BuildingPiece</span> selectedPiece;
+    <span class="keyword">private</span> <span class="class">List</span>&lt;<span class="class">Building</span>&gt; placedBuildings = <span class="keyword">new</span> <span class="class">List</span>&lt;<span class="class">Building</span>&gt;();
+    <span class="keyword">private</span> <span class="class">Stack</span>&lt;<span class="class">Building</span>&gt; undoStack = <span class="keyword">new</span> <span class="class">Stack</span>&lt;<span class="class">Building</span>&gt;();
+    
+    <span class="keyword">void</span> <span class="method">Awake</span>()
+    {
+        <span class="keyword">if</span> (Instance == <span class="keyword">null</span>)
+        {
+            Instance = <span class="keyword">this</span>;
+            <span class="class">DontDestroyOnLoad</span>(gameObject);
+        }
+        <span class="keyword">else</span>
+        {
+            <span class="class">Destroy</span>(gameObject);
+        }
+    }
+    
+    <span class="keyword">public void</span> <span class="method">SelectPiece</span>(<span class="class">BuildingPiece</span> piece)
+    {
+        selectedPiece = piece;
+        <span class="class">Debug</span>.<span class="method">Log</span>($<span class="string">"Selected building piece: {piece.pieceName}"</span>);
+    }
+    
+    <span class="keyword">public void</span> <span class="method">PlaceBuilding</span>(<span class="class">Vector3</span> position, <span class="class">Quaternion</span> rotation)
+    {
+        <span class="keyword">if</span> (selectedPiece == <span class="keyword">null</span>) <span class="keyword">return</span>;
+        
+        <span class="class">GameObject</span> newBuilding = <span class="class">Instantiate</span>(selectedPiece.prefab, position, rotation);
+        <span class="class">Building</span> buildingComponent = newBuilding.<span class="method">AddComponent</span>&lt;<span class="class">Building</span>&gt;();
+        buildingComponent.<span class="method">Initialize</span>(selectedPiece);
+        
+        placedBuildings.<span class="method">Add</span>(buildingComponent);
+        undoStack.<span class="method">Push</span>(buildingComponent);
+        
+        <span class="class">Debug</span>.<span class="method">Log</span>($<span class="string">"Placed building at {position}"</span>);
+    }
+    
+    <span class="keyword">public void</span> <span class="method">Undo</span>()
+    {
+        <span class="keyword">if</span> (undoStack.<span class="method">Count</span> > 0)
+        {
+            <span class="class">Building</span> lastBuilding = undoStack.<span class="method">Pop</span>();
+            placedBuildings.<span class="method">Remove</span>(lastBuilding);
+            <span class="class">Destroy</span>(lastBuilding.gameObject);
+            <span class="class">Debug</span>.<span class="method">Log</span>(<span class="string">"Undo last placement"</span>);
+        }
+    }
+}
